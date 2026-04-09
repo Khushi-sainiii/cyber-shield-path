@@ -1,25 +1,57 @@
 import { useState, useEffect } from 'react';
-import { Shield, Mail, AlertTriangle, TrendingDown, Activity } from 'lucide-react';
-import { api, Stats } from '@/lib/mockData';
+import { Shield, Mail, AlertTriangle, TrendingDown, Activity, Building2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-const API_URL = 'http://localhost:5000/api';
+interface CampaignStats {
+  total_campaigns: number;
+  active_campaigns: number;
+  total_results: number;
+  compromised_count: number;
+}
+
+interface CampaignRow {
+  id: string;
+  name: string;
+  campaign_type: string;
+  status: string;
+  created_at: string;
+  departments?: { name: string } | null;
+}
 
 const Dashboard = () => {
-  const [stats, setStats] = useState<Stats>({ total_sent: 0, total_clicked: 0, vulnerability_score: 100 });
+  const [stats, setStats] = useState<CampaignStats>({ total_campaigns: 0, active_campaigns: 0, total_results: 0, compromised_count: 0 });
+  const [recentCampaigns, setRecentCampaigns] = useState<CampaignRow[]>([]);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const res = await api.get(`${API_URL}/stats`);
-      if ('total_sent' in res.data) {
-        setStats(res.data as Stats);
+    const fetchData = async () => {
+      const [campaignsRes, resultsRes, recentRes] = await Promise.all([
+        supabase.from('campaigns').select('id, status'),
+        supabase.from('campaign_results').select('id, credentials_submitted'),
+        supabase.from('campaigns').select('id, name, campaign_type, status, created_at, departments(name)').order('created_at', { ascending: false }).limit(5),
+      ]);
+
+      const campaigns = campaignsRes.data || [];
+      const results = resultsRes.data || [];
+
+      setStats({
+        total_campaigns: campaigns.length,
+        active_campaigns: campaigns.filter(c => c.status === 'active').length,
+        total_results: results.length,
+        compromised_count: results.filter(r => r.credentials_submitted).length,
+      });
+
+      if (recentRes.data) {
+        setRecentCampaigns(recentRes.data as CampaignRow[]);
       }
     };
-    fetchStats();
-    const interval = setInterval(fetchStats, 2000);
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  const clickRate = stats.total_sent > 0 ? ((stats.total_clicked / stats.total_sent) * 100).toFixed(1) : 0;
+  const clickRate = stats.total_results > 0 ? ((stats.compromised_count / stats.total_results) * 100).toFixed(1) : '0';
+  const securityScore = stats.total_results > 0 ? Math.max(0, 100 - Math.round((stats.compromised_count / stats.total_results) * 100)) : 100;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -28,70 +60,59 @@ const Dashboard = () => {
         <p className="text-muted-foreground mt-1">Real-time security awareness metrics</p>
       </div>
 
-      {/* Alert Banner */}
-      <div className="cyber-card bg-warning/10 border-warning/30 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-warning/20 flex items-center justify-center">
-          <Activity className="w-5 h-5 text-warning" />
+      <div className="cyber-card bg-primary/5 border-primary/20 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+          <Activity className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <p className="font-medium text-warning">Demo Mode Active</p>
-          <p className="text-sm text-muted-foreground">Using in-browser simulation. No actual emails are sent.</p>
+          <p className="font-medium text-primary">Connected to Cloud</p>
+          <p className="text-sm text-muted-foreground">Real-time data from Lovable Cloud database.</p>
         </div>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Security Score"
-          value={stats.vulnerability_score}
-          suffix="%"
-          icon={<Shield className="w-6 h-6" />}
-          trend={stats.vulnerability_score < 80 ? 'down' : 'up'}
-          color="primary"
-        />
-        <StatCard
-          title="Simulations Sent"
-          value={stats.total_sent}
-          icon={<Mail className="w-6 h-6" />}
-          color="accent"
-        />
-        <StatCard
-          title="Users Compromised"
-          value={stats.total_clicked}
-          icon={<AlertTriangle className="w-6 h-6" />}
-          color="destructive"
-        />
-        <StatCard
-          title="Click Rate"
-          value={clickRate}
-          suffix="%"
-          icon={<TrendingDown className="w-6 h-6" />}
-          color="warning"
-        />
+        <StatCard title="Security Score" value={securityScore} suffix="%" icon={<Shield className="w-6 h-6" />} trend={securityScore < 80 ? 'down' : 'up'} color="primary" />
+        <StatCard title="Total Campaigns" value={stats.total_campaigns} icon={<Mail className="w-6 h-6" />} color="accent" />
+        <StatCard title="Users Compromised" value={stats.compromised_count} icon={<AlertTriangle className="w-6 h-6" />} color="destructive" />
+        <StatCard title="Compromise Rate" value={clickRate} suffix="%" icon={<TrendingDown className="w-6 h-6" />} color="warning" />
       </div>
 
-      {/* Instructions */}
+      {/* Recent Campaigns */}
       <div className="cyber-card">
         <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-          <span className="text-2xl">📋</span>
-          How to Test the Simulation
+          <Building2 className="w-5 h-5 text-primary" />
+          Recent Campaigns
         </h3>
-        <ol className="space-y-3">
-          {[
-            'Go to "Launch Attack" and create a phishing campaign.',
-            'Sign out and log in as an Employee (e.g., jatin@company.com).',
-            'Go to "Work Email" and click on a suspicious email.',
-            'Click the link and enter fake credentials to see the attack tracked.',
-            'After being "compromised", you\'ll be redirected to Training Modules.',
-          ].map((step, idx) => (
-            <li key={idx} className="flex items-start gap-3">
-              <span className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold flex-shrink-0">
-                {idx + 1}
-              </span>
-              <span className="text-muted-foreground">{step}</span>
-            </li>
-          ))}
-        </ol>
+        {recentCampaigns.length === 0 ? (
+          <p className="text-muted-foreground text-sm">No campaigns yet. Launch your first simulation!</p>
+        ) : (
+          <div className="space-y-3">
+            {recentCampaigns.map((campaign) => (
+              <div key={campaign.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border">
+                <div>
+                  <p className="font-medium text-foreground">{campaign.name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary capitalize">
+                      {campaign.campaign_type.replace('_', ' ')}
+                    </span>
+                    {campaign.departments && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-accent/20 text-accent">
+                        {(campaign.departments as { name: string }).name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded font-medium capitalize ${
+                  campaign.status === 'active' ? 'bg-accent/20 text-accent' :
+                  campaign.status === 'completed' ? 'bg-muted text-muted-foreground' :
+                  'bg-warning/20 text-warning'
+                }`}>
+                  {campaign.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -14,16 +14,227 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      campaign_results: {
+        Row: {
+          campaign_id: string
+          clicked_at: string | null
+          created_at: string
+          credentials_submitted: boolean | null
+          email_opened: boolean | null
+          id: string
+          link_clicked: boolean | null
+          opened_at: string | null
+          submitted_at: string | null
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          clicked_at?: string | null
+          created_at?: string
+          credentials_submitted?: boolean | null
+          email_opened?: boolean | null
+          id?: string
+          link_clicked?: boolean | null
+          opened_at?: string | null
+          submitted_at?: string | null
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          clicked_at?: string | null
+          created_at?: string
+          credentials_submitted?: boolean | null
+          email_opened?: boolean | null
+          id?: string
+          link_clicked?: boolean | null
+          opened_at?: string | null
+          submitted_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_results_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          campaign_type: Database["public"]["Enums"]["campaign_type"]
+          created_at: string
+          created_by: string
+          email_body: string | null
+          email_sender: string | null
+          email_subject: string | null
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["campaign_status"]
+          target_department_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_type: Database["public"]["Enums"]["campaign_type"]
+          created_at?: string
+          created_by: string
+          email_body?: string | null
+          email_sender?: string | null
+          email_subject?: string | null
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          target_department_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_type?: Database["public"]["Enums"]["campaign_type"]
+          created_at?: string
+          created_by?: string
+          email_body?: string | null
+          email_sender?: string | null
+          email_subject?: string | null
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          target_department_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_target_department_id_fkey"
+            columns: ["target_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          department_id: string | null
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_progress: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          module_id: string
+          score: number | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          module_id: string
+          score?: number | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          module_id?: string
+          score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "employee"
+      campaign_status: "draft" | "active" | "completed" | "paused"
+      campaign_type: "phishing" | "baiting" | "smishing" | "spear_phishing"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +361,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "employee"],
+      campaign_status: ["draft", "active", "completed", "paused"],
+      campaign_type: ["phishing", "baiting", "smishing", "spear_phishing"],
+    },
   },
 } as const
