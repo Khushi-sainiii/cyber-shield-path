@@ -85,7 +85,7 @@ const AdminGamification = () => {
           <h3 className="font-bold text-lg mb-4 text-foreground">Badge Distribution</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
-              <Pie data={badgeDistribution} cx="50%" cy="50%" outerRadius={90} innerRadius={50} dataKey="count" label={({ name, count }) => `${name}: ${count}`}>
+              <Pie data={badgeDistribution} cx="50%" cy="50%" outerRadius={90} innerRadius={50} dataKey="count" label={({ name, value }) => `${name}: ${value}`}>
                 {badgeDistribution.map((entry, idx) => (
                   <Cell key={idx} fill={entry.color} />
                 ))}
