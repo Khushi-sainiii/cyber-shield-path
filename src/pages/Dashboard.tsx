@@ -7,6 +7,8 @@ import Inbox from '@/components/Inbox';
 import TrainingModules from '@/components/TrainingModules';
 import FakeLoginPage from '@/components/FakeLoginPage';
 import CompromisedScreen from '@/components/CompromisedScreen';
+import RiskScoreCard from '@/components/RiskScoreCard';
+import AdminRiskDashboard from '@/components/AdminRiskDashboard';
 import { api, Email } from '@/lib/mockData';
 
 const API_URL = 'http://localhost:5000/api';
@@ -83,8 +85,10 @@ const DashboardPage = ({ user, onLogout }: DashboardPageProps) => {
         <div className="max-w-5xl mx-auto">
           {activeView === 'dashboard' && <DashboardView />}
           {activeView === 'create-campaign' && <CampaignLauncher />}
+          {activeView === 'risk-engine' && <AdminRiskDashboard />}
           {activeView === 'inbox' && <Inbox currentUser={user} onEmailClick={handleEmailClick} />}
           {activeView === 'training' && <TrainingModules highlightModule={highlightTrainingModule} />}
+          {activeView === 'risk-score' && <RiskScoreCard />}
         </div>
       </main>
     </div>
