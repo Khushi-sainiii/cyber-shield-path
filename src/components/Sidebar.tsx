@@ -1,4 +1,4 @@
-import { Shield, LayoutDashboard, AlertTriangle, Mail, GraduationCap, LogOut, ChevronRight } from 'lucide-react';
+import { Shield, LayoutDashboard, AlertTriangle, Mail, GraduationCap, LogOut, ChevronRight, Gauge } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface User {
@@ -44,6 +44,12 @@ const Sidebar = ({ activeView, setActiveView, currentUser, onLogout }: SidebarPr
               onClick={() => setActiveView('dashboard')}
             />
             <NavItem
+              icon={<Gauge className="w-5 h-5" />}
+              label="Risk Engine"
+              active={activeView === 'risk-engine'}
+              onClick={() => setActiveView('risk-engine')}
+            />
+            <NavItem
               icon={<AlertTriangle className="w-5 h-5" />}
               label="Launch Attack"
               active={activeView === 'create-campaign'}
@@ -67,6 +73,12 @@ const Sidebar = ({ activeView, setActiveView, currentUser, onLogout }: SidebarPr
               label="Training Modules"
               active={activeView === 'training'}
               onClick={() => setActiveView('training')}
+            />
+            <NavItem
+              icon={<Gauge className="w-5 h-5" />}
+              label="My Risk Score"
+              active={activeView === 'risk-score'}
+              onClick={() => setActiveView('risk-score')}
             />
           </>
         )}
