@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, User, Lock, AlertTriangle, UserPlus } from 'lucide-react';
+import { Shield, User, Lock, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/hooks/useAuth';
 
-const Login = () => {
+interface LoginProps {
+  onLogin: (user: { name: string; email: string; role: 'admin' | 'employee' }) => void;
+}
+
+const Login = ({ onLogin }: LoginProps) => {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [signupSuccess, setSignupSuccess] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAdminLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -24,16 +24,19 @@ const Login = () => {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    const result = await signIn(email, password);
-    if (result.error) {
-      setError(result.error);
-    } else {
+    // Mock authentication
+    await new Promise((r) => setTimeout(r, 800));
+
+    if (email === 'admin@seast.com' && password === 'admin123') {
+      onLogin({ name: 'Admin', email: 'admin@seast.com', role: 'admin' });
       navigate('/dashboard');
+    } else {
+      setError('Invalid credentials. Try admin@seast.com / admin123');
     }
     setIsLoading(false);
   };
 
-  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUserLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -41,19 +44,23 @@ const Login = () => {
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    const displayName = formData.get('displayName') as string;
 
-    const result = await signUp(email, password, displayName);
-    if (result.error) {
-      setError(result.error);
+    // Mock authentication
+    await new Promise((r) => setTimeout(r, 800));
+
+    if (email && password) {
+      const name = email.split('@')[0];
+      onLogin({ name, email, role: 'employee' });
+      navigate('/dashboard');
     } else {
-      setSignupSuccess(true);
+      setError('Please enter valid credentials');
     }
     setIsLoading(false);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-secondary/20" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
@@ -70,96 +77,117 @@ const Login = () => {
           </div>
         </div>
 
-        {signupSuccess ? (
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 mx-auto rounded-full bg-accent/20 flex items-center justify-center">
-              <Shield className="w-8 h-8 text-accent" />
-            </div>
-            <h2 className="text-lg font-bold text-foreground">Check Your Email</h2>
-            <p className="text-muted-foreground text-sm">
-              We've sent a confirmation link to your email. Please verify to continue.
+        <Tabs defaultValue="user" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-secondary/50">
+            <TabsTrigger value="user" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <User className="w-4 h-4 mr-2" />
+              Employee
+            </TabsTrigger>
+            <TabsTrigger value="admin" className="data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">
+              <Shield className="w-4 h-4 mr-2" />
+              Admin
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="user" className="mt-6">
+            <form onSubmit={handleUserLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="user-email">Work Email</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="user-email"
+                    name="email"
+                    type="email"
+                    placeholder="you@company.com"
+                    className="pl-10 input-cyber"
+                    defaultValue="jatin@company.com"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="user-password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="user-password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="pl-10 input-cyber"
+                    defaultValue="password"
+                    required
+                  />
+                </div>
+              </div>
+              {error && (
+                <div className="flex items-center gap-2 text-destructive text-sm">
+                  <AlertTriangle className="w-4 h-4" />
+                  {error}
+                </div>
+              )}
+              <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Signing in...' : 'Sign In as Employee'}
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="admin" className="mt-6">
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-email">Admin Email</Label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="admin-email"
+                    name="email"
+                    type="email"
+                    placeholder="admin@seast.com"
+                    className="pl-10 input-cyber"
+                    defaultValue="admin@seast.com"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="admin-password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="pl-10 input-cyber"
+                    defaultValue="admin123"
+                    required
+                  />
+                </div>
+              </div>
+              {error && (
+                <div className="flex items-center gap-2 text-destructive text-sm">
+                  <AlertTriangle className="w-4 h-4" />
+                  {error}
+                </div>
+              )}
+              <Button
+                type="submit"
+                className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Authenticating...' : 'Sign In as Admin'}
+              </Button>
+            </form>
+            <p className="text-xs text-muted-foreground text-center mt-4">
+              Demo: admin@seast.com / admin123
             </p>
-            <Button variant="outline" onClick={() => { setSignupSuccess(false); setMode('login'); }}>
-              Back to Login
-            </Button>
-          </div>
-        ) : (
-          <Tabs value={mode} onValueChange={(v) => { setMode(v as 'login' | 'signup'); setError(''); }}>
-            <TabsList className="grid w-full grid-cols-2 bg-secondary/50">
-              <TabsTrigger value="login" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <User className="w-4 h-4 mr-2" />
-                Sign In
-              </TabsTrigger>
-              <TabsTrigger value="signup" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Sign Up
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="login" className="mt-6">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="login-email" name="email" type="email" placeholder="you@company.com" className="pl-10 input-cyber" required />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="login-password" name="password" type="password" placeholder="••••••••" className="pl-10 input-cyber" required />
-                  </div>
-                </div>
-                {error && (
-                  <div className="flex items-center gap-2 text-destructive text-sm">
-                    <AlertTriangle className="w-4 h-4" />
-                    {error}
-                  </div>
-                )}
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
-                  {isLoading ? 'Signing in...' : 'Sign In'}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup" className="mt-6">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Display Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="signup-name" name="displayName" type="text" placeholder="Your Name" className="pl-10 input-cyber" required />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="signup-email" name="email" type="email" placeholder="you@company.com" className="pl-10 input-cyber" required />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input id="signup-password" name="password" type="password" placeholder="Min 6 characters" className="pl-10 input-cyber" required />
-                  </div>
-                </div>
-                {error && (
-                  <div className="flex items-center gap-2 text-destructive text-sm">
-                    <AlertTriangle className="w-4 h-4" />
-                    {error}
-                  </div>
-                )}
-                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isLoading}>
-                  {isLoading ? 'Creating account...' : 'Create Account'}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
