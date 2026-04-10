@@ -9,6 +9,9 @@ import FakeLoginPage from '@/components/FakeLoginPage';
 import CompromisedScreen from '@/components/CompromisedScreen';
 import RiskScoreCard from '@/components/RiskScoreCard';
 import AdminRiskDashboard from '@/components/AdminRiskDashboard';
+import GamificationProfile from '@/components/GamificationProfile';
+import Leaderboard from '@/components/Leaderboard';
+import AdminGamification from '@/components/AdminGamification';
 import { api, Email } from '@/lib/mockData';
 
 const API_URL = 'http://localhost:5000/api';
@@ -89,6 +92,9 @@ const DashboardPage = ({ user, onLogout }: DashboardPageProps) => {
           {activeView === 'inbox' && <Inbox currentUser={user} onEmailClick={handleEmailClick} />}
           {activeView === 'training' && <TrainingModules highlightModule={highlightTrainingModule} />}
           {activeView === 'risk-score' && <RiskScoreCard />}
+          {activeView === 'gamification' && <GamificationProfile />}
+          {activeView === 'leaderboard' && <Leaderboard />}
+          {activeView === 'admin-gamification' && <AdminGamification />}
         </div>
       </main>
     </div>
