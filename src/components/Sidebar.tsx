@@ -1,4 +1,4 @@
-import { Shield, LayoutDashboard, AlertTriangle, Mail, GraduationCap, LogOut, ChevronRight, Gauge, Star, Trophy, Award } from 'lucide-react';
+import { Shield, LayoutDashboard, AlertTriangle, Mail, GraduationCap, LogOut, ChevronRight, Gauge, Star, Trophy, Award, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface User {
@@ -73,6 +73,12 @@ const Sidebar = ({ activeView, setActiveView, currentUser, onLogout }: SidebarPr
               label="Work Email"
               active={activeView === 'inbox'}
               onClick={() => setActiveView('inbox')}
+            />
+            <NavItem
+              icon={<Smartphone className="w-5 h-5" />}
+              label="SMS Inbox"
+              active={activeView === 'sms-inbox'}
+              onClick={() => setActiveView('sms-inbox')}
             />
             <NavItem
               icon={<GraduationCap className="w-5 h-5" />}

@@ -4,6 +4,7 @@ import Sidebar from '@/components/Sidebar';
 import DashboardView from '@/components/Dashboard';
 import CampaignLauncher from '@/components/CampaignLauncher';
 import Inbox from '@/components/Inbox';
+import SmsInbox, { SmsMessage } from '@/components/SmsInbox';
 import TrainingModules from '@/components/TrainingModules';
 import FakeLoginPage from '@/components/FakeLoginPage';
 import CompromisedScreen from '@/components/CompromisedScreen';
@@ -90,6 +91,15 @@ const DashboardPage = ({ user, onLogout }: DashboardPageProps) => {
           {activeView === 'create-campaign' && <CampaignLauncher />}
           {activeView === 'risk-engine' && <AdminRiskDashboard />}
           {activeView === 'inbox' && <Inbox currentUser={user} onEmailClick={handleEmailClick} />}
+          {activeView === 'sms-inbox' && (
+            <SmsInbox
+              onMaliciousClick={(msg: SmsMessage) => {
+                setCurrentAttackToken(msg.id);
+                setHighlightTrainingModule('smishing');
+                setSimulationMode('login');
+              }}
+            />
+          )}
           {activeView === 'training' && <TrainingModules highlightModule={highlightTrainingModule} />}
           {activeView === 'risk-score' && <RiskScoreCard />}
           {activeView === 'gamification' && <GamificationProfile />}
