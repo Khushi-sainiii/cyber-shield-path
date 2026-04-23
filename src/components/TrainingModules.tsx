@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, BarChart3, CheckCircle, ChevronRight, AlertTriangle, Shield, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trainingModules, TrainingModule } from '@/lib/trainingContent';
 import { cn } from '@/lib/utils';
+import { userActions } from '@/lib/actions';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface TrainingModulesProps {
   highlightModule?: string;
@@ -182,7 +185,39 @@ const ModuleContent = ({
           ))}
 
           {!showQuizResults && Object.keys(quizAnswers).length === module.content.quiz.length && (
-            <Button onClick={() => setShowQuizResults(true)} className="w-full">
+            <Button
+              onClick={async () => {
+                setShowQuizResults(true);
+                const total = module.content.quiz!.length;
+                const correct = Object.entries(quizAnswers).filter(
+                  ([idx, answer]) => module.content.quiz![parseInt(idx)].correct === answer
+                ).length;
+                const score = Math.round((correct / total) * 100);
+                const { data: userData } = await supabase.auth.getUser();
+                const uid = userData.user?.id;
+                if (uid) {
+                  await supabase.from('training_progress').insert({
+                    user_id: uid,
+                    module_id: module.id,
+                    completed: true,
+                    completed_at: new Date().toISOString(),
+                    score,
+                  });
+                }
+                await userActions.trainingCompleted(module.id);
+                if (score >= 70) {
+                  await userActions.quizPassed(module.id, score);
+                  toast.success(`Quiz passed! +40 points`, {
+                    description: `${correct}/${total} correct on ${module.title}`,
+                  });
+                } else {
+                  toast(`Training logged — review and try again`, {
+                    description: `${correct}/${total} correct. Need 70% to pass the quiz.`,
+                  });
+                }
+              }}
+              className="w-full"
+            >
               Submit Answers
             </Button>
           )}

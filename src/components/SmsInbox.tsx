@@ -3,6 +3,7 @@ import { Smartphone, AlertTriangle, Flag, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { userActions } from '@/lib/actions';
 
 export interface SmsMessage {
   id: string;
@@ -61,9 +62,10 @@ const SmsInbox = ({ onMaliciousClick }: SmsInboxProps) => {
   const [messages, setMessages] = useState<SmsMessage[]>(initialMessages);
   const [selected, setSelected] = useState<SmsMessage | null>(initialMessages[0]);
 
-  const handleReport = (msg: SmsMessage) => {
+  const handleReport = async (msg: SmsMessage) => {
     setMessages((prev) => prev.filter((m) => m.id !== msg.id));
     if (selected?.id === msg.id) setSelected(null);
+    await userActions.reportedPhishing();
     toast.success('Smishing attempt reported', {
       description: 'Great catch! +20 points awarded for reporting.',
     });
