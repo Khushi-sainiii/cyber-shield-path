@@ -1,45 +1,55 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Shield, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { api, MOCK_DB } from '@/lib/mockData';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const RiskScoreCard = () => {
+  const { user } = useAuth();
   const [score, setScore] = useState(0);
   const [previousScore, setPreviousScore] = useState(0);
+  const [level, setLevel] = useState<'low' | 'medium' | 'high'>('low');
 
-  useEffect(() => {
-    const calcScore = () => {
-      // Calculate from mock data: opened=+5, clicked=+20, compromised(credentials)=+40
-      let total = 0;
-      MOCK_DB.emails.forEach((email) => {
-        if (email.status === 'sent') total += 5; // opened
-        if (email.status === 'clicked') total += 20;
-        if (email.status === 'compromised') total += 40;
-      });
-      total = Math.min(100, Math.max(0, total));
-      setPreviousScore(score);
-      setScore(total);
-    };
-    calcScore();
-    const interval = setInterval(calcScore, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const getRiskLevel = (s: number) => {
-    if (s <= 30) return { label: 'Low Risk', color: 'text-accent', bg: 'bg-accent/20', border: 'border-accent/30' };
-    if (s <= 70) return { label: 'Medium Risk', color: 'text-warning', bg: 'bg-warning/20', border: 'border-warning/30' };
-    return { label: 'High Risk', color: 'text-destructive', bg: 'bg-destructive/20', border: 'border-destructive/30' };
+  const fetchScore = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('risk_scores')
+      .select('score, risk_level')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (data) {
+      setPreviousScore((p) => (p !== data.score ? score : p));
+      setScore(data.score);
+      setLevel(data.risk_level as 'low' | 'medium' | 'high');
+    }
   };
 
-  const risk = getRiskLevel(score);
+  useEffect(() => {
+    fetchScore();
+    if (!user) return;
+    const channel = supabase
+      .channel('risk_scores_self')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'risk_scores', filter: `user_id=eq.${user.id}` }, () => fetchScore())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const palette = {
+    low: { color: 'text-accent', bg: 'bg-accent/20', border: 'border-accent/30', bar: 'bg-accent', label: 'Low Risk' },
+    medium: { color: 'text-warning', bg: 'bg-warning/20', border: 'border-warning/30', bar: 'bg-warning', label: 'Medium Risk' },
+    high: { color: 'text-destructive', bg: 'bg-destructive/20', border: 'border-destructive/30', bar: 'bg-destructive', label: 'High Risk' },
+  }[level];
+
   const trend = score > previousScore ? 'up' : score < previousScore ? 'down' : 'neutral';
 
   return (
-    <div className={`cyber-card ${risk.border} border`}>
+    <div className={`cyber-card ${palette.border} border`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${risk.bg}`}>
-            <Shield className={`w-6 h-6 ${risk.color}`} />
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${palette.bg}`}>
+            <Shield className={`w-6 h-6 ${palette.color}`} />
           </div>
           <div>
             <h3 className="text-lg font-bold text-foreground">Your Risk Score</h3>
@@ -48,14 +58,14 @@ const RiskScoreCard = () => {
         </div>
         <div className="text-right">
           <div className="flex items-center gap-1">
-            <span className={`text-3xl font-bold ${risk.color}`}>{score}</span>
+            <span className={`text-3xl font-bold ${palette.color}`}>{score}</span>
             <span className="text-lg text-muted-foreground">/100</span>
           </div>
-          <div className={`flex items-center gap-1 text-xs ${risk.color}`}>
+          <div className={`flex items-center gap-1 text-xs ${palette.color}`}>
             {trend === 'up' && <TrendingUp className="w-3 h-3" />}
             {trend === 'down' && <TrendingDown className="w-3 h-3" />}
             {trend === 'neutral' && <Minus className="w-3 h-3" />}
-            {risk.label}
+            {palette.label}
           </div>
         </div>
       </div>
@@ -66,12 +76,7 @@ const RiskScoreCard = () => {
           <span>{score}%</span>
         </div>
         <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
-          <div
-            className={`h-full rounded-full transition-all duration-1000 ${
-              score <= 30 ? 'bg-accent' : score <= 70 ? 'bg-warning' : 'bg-destructive'
-            }`}
-            style={{ width: `${score}%` }}
-          />
+          <div className={`h-full rounded-full transition-all duration-1000 ${palette.bar}`} style={{ width: `${score}%` }} />
         </div>
         <div className="flex justify-between text-xs text-muted-foreground mt-1">
           <span>Low (0-30)</span>
