@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, BarChart3, CheckCircle, ChevronRight, AlertTriangle, Shield, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trainingModules, TrainingModule } from '@/lib/trainingContent';
 import { cn } from '@/lib/utils';
+import { userActions } from '@/lib/actions';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface TrainingModulesProps {
   highlightModule?: string;
