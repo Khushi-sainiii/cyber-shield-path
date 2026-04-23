@@ -42,12 +42,13 @@ async function logCampaignAction(field: 'email_opened' | 'link_clicked' | 'crede
   }
   if (!cId) return;
 
-  await supabase.from('campaign_results').insert({
+  const insertRow = {
     user_id: userId,
     campaign_id: cId,
     [field]: true,
     [timestampField]: new Date().toISOString(),
-  });
+  } as never;
+  await supabase.from('campaign_results').insert(insertRow);
 
   // Recalculate risk
   await supabase.rpc('recalculate_risk_score', { target_user_id: userId });
