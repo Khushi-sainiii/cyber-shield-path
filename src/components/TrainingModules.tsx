@@ -185,7 +185,39 @@ const ModuleContent = ({
           ))}
 
           {!showQuizResults && Object.keys(quizAnswers).length === module.content.quiz.length && (
-            <Button onClick={() => setShowQuizResults(true)} className="w-full">
+            <Button
+              onClick={async () => {
+                setShowQuizResults(true);
+                const total = module.content.quiz!.length;
+                const correct = Object.entries(quizAnswers).filter(
+                  ([idx, answer]) => module.content.quiz![parseInt(idx)].correct === answer
+                ).length;
+                const score = Math.round((correct / total) * 100);
+                const { data: userData } = await supabase.auth.getUser();
+                const uid = userData.user?.id;
+                if (uid) {
+                  await supabase.from('training_progress').insert({
+                    user_id: uid,
+                    module_id: module.id,
+                    completed: true,
+                    completed_at: new Date().toISOString(),
+                    score,
+                  });
+                }
+                await userActions.trainingCompleted(module.id);
+                if (score >= 70) {
+                  await userActions.quizPassed(module.id, score);
+                  toast.success(`Quiz passed! +40 points`, {
+                    description: `${correct}/${total} correct on ${module.title}`,
+                  });
+                } else {
+                  toast(`Training logged — review and try again`, {
+                    description: `${correct}/${total} correct. Need 70% to pass the quiz.`,
+                  });
+                }
+              }}
+              className="w-full"
+            >
               Submit Answers
             </Button>
           )}
